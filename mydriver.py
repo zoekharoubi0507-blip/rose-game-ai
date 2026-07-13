@@ -4,96 +4,105 @@ This driver does not do any action.
 
 from rose.common import obstacles, actions  # NOQA
 
-driver_name = "MyDriverElisha4"
 
 
+driver_name = "CarDriver"
 
-from rose.common import obstacles, actions
-
-driver_name = "Michael Schumacher"  # אפשר לשנות לשם שתרצה שיוצג במשחק
-
-
-LANE_WIDTH = 3  # 3 מסלולים בתוך הנתיב שלך: 0, 1, 2
+DEBUG = True  # שנה ל-False כשהכל עובד טוב
 
 
-def get_obstacle(world, x, y):
-    """מחזיר את המכשול במיקום (x, y), או None אם המיקום מחוץ למסלול"""
+def safe_get(world, x, y):
+    """
+    קריאה בטוחה ל-world.get - אף פעם לא זורקת שגיאה.
+    מחזירה None אם המיקום לא חוקי (מחוץ למסלול).
+    """
     try:
         return world.get((x, y))
     except IndexError:
         return None
+    except Exception:
+        return None
 
 
-def stay_score_and_action(obstacle):
+def direct_action_for(obstacle):
     """
-    בודק אם ניתן להתמודד עם המכשול "ישר" (בלי לזוז לעמודה אחרת).
-    מחזיר (ניקוד, פעולה).
-    אם המכשול מחייב עקיפה (trash/bike/barrier) - מחזיר (None, None),
-    כי אי אפשר "להישאר" מולו.
+    מחזיר (ניקוד, פעולה) עבור התמודדות ישירה (בלי לזוז לעמודה אחרת) עם המכשול.
+    מחזיר (None, None) אם אי אפשר להתמודד ישירות (חייבים לעקוף - trash/bike/barrier),
+    או אם obstacle הוא None (מיקום לא חוקי).
     """
-    if obstacle is None or obstacle == obstacles.NONE:
-        return 0, actions.NONE
-    elif obstacle == obstacles.PENGUIN:
-        return 10, actions.PICKUP
-    elif obstacle == obstacles.WATER:
-        return 4, actions.BRAKE
-    elif obstacles.CRACK == obstacle:
-        return 5, actions.JUMP
-    else:
-        # obstacles.TRASH, obstacles.BIKE, obstacles.BARRIER
-        # אלו מכשולים שחובה לעקוף - אין דרך "להישאר" מולם
+    if obstacle is None:
         return None, None
+    if obstacle == obstacles.NONE:
+        return 0, actions.NONE
+    if obstacle == obstacles.PENGUIN:
+        return 10, actions.PICKUP
+    if obstacle == obstacles.WATER:
+        return 4, actions.BRAKE
+    if obstacle == obstacles.CRACK:
+        return 5, actions.JUMP
+    # obstacles.TRASH / obstacles.BIKE / obstacles.BARRIER / כל דבר אחר לא מוכר
+    return None, None
 
 
-def lookahead_score(obstacle):
-    """
-    ניקוד גס להערכת מכשול בשורה השנייה קדימה (y - 2),
-    לצורך תכנון לאיזה כיוון כדאי לעקוף.
-    """
-    if obstacle is None or obstacle == obstacles.NONE:
+def rough_score(obstacle):
+    """ניקוד גס להערכת מכשול, לשימוש בתכנון קדימה (שורה שנייה) בלבד"""
+    if obstacle is None:
+        return 0  # מיקום לא חוקי - נייטרלי, לא מעניש
+    if obstacle == obstacles.NONE:
         return 0
-    elif obstacle == obstacles.PENGUIN:
+    if obstacle == obstacles.PENGUIN:
         return 10
-    elif obstacle == obstacles.WATER:
+    if obstacle == obstacles.WATER:
         return 4
-    elif obstacle == obstacles.CRACK:
+    if obstacle == obstacles.CRACK:
         return 5
-    else:
-        # trash / bike / barrier - נעדיף לא להגיע לשם אם אפשר
-        return -10
+    return -10  # trash / bike / barrier - עדיף להימנע
 
 
 def drive(world):
     x = world.car.x
     y = world.car.y
 
-    obstacle_ahead = get_obstacle(world, x, y - 1)
+    obstacle_ahead = safe_get(world, x, y - 1)
 
-    # ניקוד לשורה השנייה קדימה, לכל אחד משלושת המסלולים - עוזר לבחור כיוון עקיפה חכם
-    scores2 = [lookahead_score(get_obstacle(world, i, y - 2)) for i in range(LANE_WIDTH)]
+    options = []  # (ניקוד_כולל, פעולה, עמודת_יעד) - רק אפשרויות חוקיות
 
-    options = []  # (ניקוד_כולל, פעולה, עמודת_יעד)
-
-    # אפשרות 1: להישאר באותה עמודה ולהתמודד ישירות עם המכשול (אם אפשרי)
-    stay_score, stay_action = stay_score_and_action(obstacle_ahead)
+    # ====== אפשרות 1: להישאר באותה עמודה ולהתמודד ישירות ======
+    stay_score, stay_action = direct_action_for(obstacle_ahead)
     if stay_action is not None:
-        options.append((stay_score + scores2[x], stay_action, x))
+        # ניקוד לשורה השנייה קדימה באותה עמודה (רק אם רלוונטי, מוגן מלא)
+        lookahead_val = rough_score(safe_get(world, x, y - 2))
+        options.append((stay_score + lookahead_val, stay_action, x))
 
-    # אפשרות 2: לעקוף שמאלה (bypass) - חוקי כמעט תמיד, גם לגבי trash/bike/barrier
-    if x - 1 >= 0:
-        options.append((0 + scores2[x - 1], actions.LEFT, x - 1))
+    # ====== אפשרות 2: לעקוף שמאלה - בודקים אם זה בכלל חוקי (לא מניחים טווח) ======
+    left_test = safe_get(world, x - 1, y - 1)
+    if left_test is not None:
+        lookahead_val = rough_score(safe_get(world, x - 1, y - 2))
+        options.append((0 + lookahead_val, actions.LEFT, x - 1))
 
-    # אפשרות 3: לעקוף ימינה
-    if x + 1 <= LANE_WIDTH - 1:
-        options.append((0 + scores2[x + 1], actions.RIGHT, x + 1))
+    # ====== אפשרות 3: לעקוף ימינה ======
+    right_test = safe_get(world, x + 1, y - 1)
+    if right_test is not None:
+        lookahead_val = rough_score(safe_get(world, x + 1, y - 2))
+        options.append((0 + lookahead_val, actions.RIGHT, x + 1))
 
-    # בחר את האפשרות הכי טובה.
-    # שובר שוויון: קודם מעדיפים "להישאר" (פחות תזוזה מיותרת), ואז הכי קרוב לעמודה הנוכחית.
+    if DEBUG:
+        print(f"[drive] x={x} y={y} obstacle_ahead={obstacle_ahead!r} options={options}")
+
+    # ====== אם משום מה אין אף אפשרות חוקית - חזרה בטוחה ======
+    if not options:
+        if DEBUG:
+            print("[drive] אין אפשרויות חוקיות! מחזיר NONE כברירת מחדל")
+        return actions.NONE
+
+    # ====== בחירת האפשרות הטובה ביותר ======
+    # שובר שוויון: קודם מעדיפים "להישאר" (x==target), ואז הכי קרוב לעמודה הנוכחית
     best_total, best_action, best_target = max(
         options,
         key=lambda opt: (opt[0], opt[2] == x, -abs(opt[2] - x))
     )
 
-
+    if DEBUG:
+        print(f"[drive] נבחר: action={best_action} (target_x={best_target}, score={best_total})")
 
     return best_action
