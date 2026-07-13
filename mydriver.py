@@ -22,7 +22,13 @@ def drive(world):
         else : possible[i]=-10
 
     if x==0:
-        max=possible[0]
+        maximum=max(possible[0],possible[1])
+    elif x==2:
+        maximum = max(possible[1], possible[2])
+    else:
+        maximum = max(possible[1], possible[2], possible[0])
+
+
 
     try:
         obstacle1 = world.get((x, y - 1))
