@@ -1,102 +1,60 @@
-"""
-This driver does not do any action.
-"""
-
 from rose.common import obstacles, actions  # NOQA
 
-driver_name = "MyDriverElisha4"
+driver_name = "MaxScoreDriver_dana"
 
+def get_lane_score(world, lane_x, car_y, look_ahead=5):
 
-
-from rose.common import obstacles, actions
-
-driver_name = "Michael Schumacher"  # אפשר לשנות לשם שתרצה שיוצג במשחק
-
-DEBUG = False  # שנה ל-True כדי לראות הדפסות דיבאג
-
-LANE_WIDTH = 3  # 3 מסלולים בתוך הנתיב שלך: 0, 1, 2
-
-
-def get_obstacle(world, x, y):
-    """מחזיר את המכשול במיקום (x, y), או None אם המיקום מחוץ למסלול"""
-    try:
-        return world.get((x, y))
-    except IndexError:
-        return None
-
-
-def stay_score_and_action(obstacle):
-    """
-    בודק אם ניתן להתמודד עם המכשול "ישר" (בלי לזוז לעמודה אחרת).
-    מחזיר (ניקוד, פעולה).
-    אם המכשול מחייב עקיפה (trash/bike/barrier) - מחזיר (None, None),
-    כי אי אפשר "להישאר" מולו.
-    """
-    if obstacle is None or obstacle == obstacles.NONE:
-        return 0, actions.NONE
-    elif obstacle == obstacles.PENGUIN:
-        return 10, actions.PICKUP
-    elif obstacle == obstacles.WATER:
-        return 4, actions.BRAKE
-    elif obstacles.CRACK == obstacle:
-        return 5, actions.JUMP
-    else:
-        # obstacles.TRASH, obstacles.BIKE, obstacles.BARRIER
-        # אלו מכשולים שחובה לעקוף - אין דרך "להישאר" מולם
-        return None, None
-
-
-def lookahead_score(obstacle):
-    """
-    ניקוד גס להערכת מכשול בשורה השנייה קדימה (y - 2),
-    לצורך תכנון לאיזה כיוון כדאי לעקוף.
-    """
-    if obstacle is None or obstacle == obstacles.NONE:
-        return 0
-    elif obstacle == obstacles.PENGUIN:
-        return 10
-    elif obstacle == obstacles.WATER:
-        return 4
-    elif obstacle == obstacles.CRACK:
-        return 5
-    else:
-        # trash / bike / barrier - נעדיף לא להגיע לשם אם אפשר
-        return -10
-
+    score = 0
+    for i in range(1, look_ahead + 1):
+        try:
+            item = world.get((lane_x, car_y - i))
+            
+            if item == obstacles.PENGUIN:
+                score += 20
+            elif item == obstacles.CRACK:
+                score += 15
+            elif item == obstacles.WATER:
+                score += 14
+            elif item == obstacles.NONE:
+                score += 10
+            else:
+                score -= 10 
+        except IndexError:
+            pass
+            
+    return score
 
 def drive(world):
     x = world.car.x
     y = world.car.y
-
-    obstacle_ahead = get_obstacle(world, x, y - 1)
-
-    # ניקוד לשורה השנייה קדימה, לכל אחד משלושת המסלולים - עוזר לבחור כיוון עקיפה חכם
-    scores2 = [lookahead_score(get_obstacle(world, i, y - 2)) for i in range(LANE_WIDTH)]
-
-    options = []  # (ניקוד_כולל, פעולה, עמודת_יעד)
-
-    # אפשרות 1: להישאר באותה עמודה ולהתמודד ישירות עם המכשול (אם אפשרי)
-    stay_score, stay_action = stay_score_and_action(obstacle_ahead)
-    if stay_action is not None:
-        options.append((stay_score + scores2[x], stay_action, x))
-
-    # אפשרות 2: לעקוף שמאלה (bypass) - חוקי כמעט תמיד, גם לגבי trash/bike/barrier
-    if x - 1 >= 0:
-        options.append((0 + scores2[x - 1], actions.LEFT, x - 1))
-
-    # אפשרות 3: לעקוף ימינה
-    if x + 1 <= LANE_WIDTH - 1:
-        options.append((0 + scores2[x + 1], actions.RIGHT, x + 1))
-
-    # בחר את האפשרות הכי טובה.
-    # שובר שוויון: קודם מעדיפים "להישאר" (פחות תזוזה מיותרת), ואז הכי קרוב לעמודה הנוכחית.
-    best_total, best_action, best_target = max(
-        options,
-        key=lambda opt: (opt[0], opt[2] == x, -abs(opt[2] - x))
-    )
-
-    if DEBUG:
-        print(f"x={x}, obstacle_ahead={obstacle_ahead}, scores2={scores2}, "
-              f"options={options} -> chosen={best_action}")
-
-    return best_action
+    
+    try:
+        immediate_obstacle = world.get((x, y - 2))
+    except IndexError:
+        immediate_obstacle = obstacles.NONE
+        
+    if immediate_obstacle == obstacles.PENGUIN:
+        return actions.PICKUP
+    elif immediate_obstacle == obstacles.CRACK:
+        return actions.JUMP
+    elif immediate_obstacle == obstacles.WATER:
+        return actions.BRAKE
+    
+    lane_scores = {}
+    for lane_x in range(3):
+        lane_scores[lane_x] = get_lane_score(world, lane_x, y, look_ahead=5)
+        
+    best_lane = x
+    best_score = lane_scores[x]
+    
+    for lane_x in range(3):
+        if lane_scores[lane_x] > best_score:
+            best_lane = lane_x
+            best_score = lane_scores[lane_x]
+            
+    if best_lane > x:
+        return actions.RIGHT
+    elif best_lane < x:
+        return actions.LEFT
+        
+    return actions.NONE
