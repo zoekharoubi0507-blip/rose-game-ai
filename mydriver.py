@@ -12,7 +12,6 @@ from rose.common import obstacles, actions
 
 driver_name = "Michael Schumacher"  # אפשר לשנות לשם שתרצה שיוצג במשחק
 
-DEBUG = False  # שנה ל-True כדי לראות הדפסות דיבאג
 
 LANE_WIDTH = 3  # 3 מסלולים בתוך הנתיב שלך: 0, 1, 2
 
@@ -95,8 +94,6 @@ def drive(world):
         key=lambda opt: (opt[0], opt[2] == x, -abs(opt[2] - x))
     )
 
-    if DEBUG:
-        print(f"x={x}, obstacle_ahead={obstacle_ahead}, scores2={scores2}, "
-              f"options={options} -> chosen={best_action}")
+
 
     return best_action
