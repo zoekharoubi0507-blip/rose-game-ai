@@ -69,7 +69,7 @@ with the lane owner.
     |       |       |       |X|       |       |      |
     |       | car#1 |       |X|       | Car#2 |      |
     |       |       |       |X|       |       |      |
-    |       |       |       |X|       |       |      |
+0    |       |       |       |X|       |       |      |
 
 Every turn the driver moves one step forward and gains 10 points
 if there was no obstacle.  
