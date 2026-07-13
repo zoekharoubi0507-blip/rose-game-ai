@@ -28,14 +28,38 @@ def drive(world):
     else:
         maximum = max(possible[1], possible[2], possible[0])
 
+    idxmax=possible.index(maximum)
+
+    if idxmax==0:
+        if x==1:
+            actions.LEFT
+        else:
+            actions.NONE
+    elif idxmax==1:
+        if x==1:
+            actions.NONE
+        elif x==0:
+            actions.RIGHT
+        else:
+            actions.LEFT
+    else:
+        if x==2:
+            actions.NONE
+        else:
+            actions.RIGHT
 
 
     try:
-        obstacle1 = world.get((x, y - 1))
+        obstacle = world.get((x, y - 1))
+        if obstacle== obstacles.PENGUIN:
+            return actions.PICKUP
+        elif obstacle==obstacles.CRACK:
+            return actions.JUMP
+        elif obstacle==obstacles.WATER:
+            return actions.BRAKE
+        else:
+             return actions.NONE
     except IndexError:
-
-
-    else:
-        # Choose the best action for obstacle
+        return actions.NONE
     return actions.NONE
 
