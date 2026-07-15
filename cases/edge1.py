@@ -27,7 +27,7 @@ register(
         "should go straight."
     ),
     track=track,
-    car={"x": 1, "y": 2},
+    car={"x": 1, "y": 8},
     expected=actions.RIGHT,
     driver_module=mydriver,
 )

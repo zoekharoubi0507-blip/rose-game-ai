@@ -14,7 +14,7 @@ track = [
 [NONE, NONE, NONE],
 [NONE, NONE, NONE],
     [NONE, NONE, NONE],
-    [NONE, NONE, NONE],
+    [NONE, obstacles.PENGUIN, obstacles.WATER],
     [NONE, NONE, NONE],
 ]
 
@@ -27,7 +27,7 @@ register(
         "should go straight."
     ),
     track=track,
-    car={"x": 2, "y": 2},
+    car={"x": 2, "y": 8},
     expected=actions.LEFT,
     driver_module=mydriver,
 )

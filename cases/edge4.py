@@ -13,8 +13,8 @@ track = [
     [NONE, NONE, NONE],
 [NONE, NONE, NONE],
 [NONE, NONE, NONE],
-    [obstacles.BARRIER, obstacles.PENGUIN, obstacles.BARRIER],
-    [obstacles.BARRIER, NONE, obstacles.BARRIER],
+    [NONE, NONE, NONE],
+    [NONE, obstacles.BIKE, obstacles.BARRIER],
     [NONE, NONE, NONE],
 ]
 
@@ -28,6 +28,6 @@ register(
     ),
     track=track,
     car={"x": 1, "y": 8},
-    expected=actions.NONE,
+    expected=actions.LEFT,
     driver_module=mydriver,
 )
