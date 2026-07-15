@@ -7,6 +7,12 @@ from . import register
 # matching the shape used in rose/ai/server.py's docstring example).
 NONE = obstacles.NONE
 track = [
+[NONE, NONE, NONE],
+[NONE, NONE, NONE],
+    [NONE, NONE, NONE],
+    [NONE, NONE, NONE],
+[NONE, NONE, NONE],
+[NONE, NONE, NONE],
     [NONE, NONE, NONE],
     [NONE, NONE, NONE],
     [NONE, NONE, NONE],

@@ -9,6 +9,10 @@ NONE = obstacles.NONE
 track = [
 [NONE, NONE, NONE],
 [NONE, NONE, NONE],
+    [NONE, NONE, NONE],
+    [NONE, NONE, NONE],
+[NONE, NONE, NONE],
+[NONE, NONE, NONE],
     [obstacles.BARRIER, obstacles.PENGUIN, obstacles.BARRIER],
     [obstacles.BARRIER, NONE, obstacles.BARRIER],
     [NONE, NONE, NONE],
@@ -23,7 +27,7 @@ register(
         "should go straight."
     ),
     track=track,
-    car={"x": 1, "y": 4},
+    car={"x": 1, "y": 2},
     expected=actions.NONE,
     driver_module=mydriver,
 )
