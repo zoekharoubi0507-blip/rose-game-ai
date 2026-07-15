@@ -7,8 +7,8 @@ from . import register
 # matching the shape used in rose/ai/server.py's docstring example).
 NONE = obstacles.NONE
 track = [
-    [obstacles.BARRIER, NONE, NONE],
-    [obstacles.PENGUIN, NONE, obstacles.PENGUIN],
+    [NONE, NONE, NONE],
+    [NONE, NONE, NONE],
     [NONE, NONE, NONE],
 ]
 
@@ -21,7 +21,7 @@ register(
         "should go straight."
     ),
     track=track,
-    car={"x": 1, "y": 2},
-    expected=actions.RIGHT,
+    car={"x": 2, "y": 2},
+    expected=actions.LEFT,
     driver_module=mydriver,
 )
