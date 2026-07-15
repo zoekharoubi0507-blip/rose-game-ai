@@ -3,7 +3,7 @@ import mydriver
 from . import register
 
 # mydriver.py's CompetitionPolicy expects a full-size track: HEIGHT=9 rows,
-# width a multiple of CELLS_PER_LANE=3 (this is 2 lanes of 3 cells each,
+# width a multiple of CELLS_PER_LANE=3
 # matching the shape used in rose/ai/server.py's docstring example).
 NONE = obstacles.NONE
 track = [
