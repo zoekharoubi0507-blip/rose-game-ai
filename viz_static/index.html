@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Driver Edge Cases</title>
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #1e1f24;
+    color: #eee;
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+  }
+  .app { width: 100%; max-width: 720px; }
+  h1 { font-size: 1.3rem; margin-bottom: 0.25rem; }
+  .subtitle { color: #999; margin-bottom: 1.5rem; }
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .nav button {
+    background: #33353d;
+    color: #eee;
+    border: 1px solid #4a4c56;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .nav button:hover { background: #4a4c56; }
+  .nav button:disabled { opacity: 0.4; cursor: default; }
+  .counter { color: #aaa; }
+  .badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .badge.pass { background: #1f4d2c; color: #7ee59a; }
+  .badge.fail { background: #4d1f24; color: #ff8f97; }
+  .case-name { font-size: 1.1rem; font-weight: 600; margin: 1rem 0 0.25rem; }
+  .description { color: #bbb; margin-bottom: 1rem; }
+  table.grid {
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+  table.grid td {
+    width: 64px;
+    height: 64px;
+    border: 1px solid #3a3c44;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 1.6rem;
+    position: relative;
+    background: #26272e;
+  }
+  table.grid td.car::after {
+    content: "🚗";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    color: #999;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .info-row { display: flex; gap: 2rem; margin-top: 0.5rem; }
+  .info-row div span { color: #7fb0ff; font-weight: 600; }
+  .error { color: #ff8f97; margin-top: 0.75rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Driver Edge Cases</h1>
+  <div class="subtitle">Visualizing cases registered under <code>cases/</code></div>
+
+  <div class="nav">
+    <button id="prev">&larr; Prev</button>
+    <span class="counter" id="counter">-</span>
+    <button id="next">Next &rarr;</button>
+  </div>
+
+  <div id="badge"></div>
+  <div class="case-name" id="case-name"></div>
+  <div class="description" id="description"></div>
+
+  <table class="grid" id="grid"></table>
+
+  <div class="legend">
+    <span>🐧 penguin</span>
+    <span>💧 water</span>
+    <span>⚡ crack</span>
+    <span>🧱 wall / barrier</span>
+    <span>🚲 bike</span>
+    <span>🗑️ trash</span>
+    <span>⬜ air</span>
+    <span>🚗 car</span>
+  </div>
+
+  <div class="info-row">
+    <div>expected: <span id="expected"></span></div>
+    <div>actual: <span id="actual"></span></div>
+  </div>
+  <div class="error" id="error"></div>
+</div>
+
+<script>
+const OBSTACLE_ICONS = {
+  "": "⬜",
+  "crack": "⚡",
+  "trash": "🗑️",
+  "penguin": "🐧",
+  "bike": "🚲",
+  "water": "💧",
+  "barrier": "🧱",
+};
+
+let cases = [];
+let index = 0;
+
+async function loadCases() {
+  const res = await fetch("/api/cases");
+  cases = await res.json();
+  index = 0;
+  await showCase(index);
+}
+
+async function showCase(i) {
+  const res = await fetch(`/api/case/${i}`);
+  const data = await res.json();
+  render(data);
+}
+
+function render(data) {
+  document.getElementById("counter").textContent = `${data.index + 1} / ${cases.length}`;
+  document.getElementById("case-name").textContent = data.name;
+  document.getElementById("description").textContent = data.description;
+  document.getElementById("expected").textContent = data.expected;
+  document.getElementById("actual").textContent = data.actual === null ? "(none)" : data.actual;
+  document.getElementById("error").textContent = data.error ? `driver error: ${data.error}` : "";
+
+  const badge = document.getElementById("badge");
+  badge.innerHTML = `<span class="badge ${data.passed ? "pass" : "fail"}">${data.passed ? "PASS" : "FAIL"}</span>`;
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  data.track.forEach((row, y) => {
+    const tr = document.createElement("tr");
+    row.forEach((cell, x) => {
+      const td = document.createElement("td");
+      const isCar = data.car.x === x && data.car.y === y;
+      td.textContent = isCar ? "" : (OBSTACLE_ICONS[cell] ?? cell);
+      if (isCar) td.classList.add("car");
+      tr.appendChild(td);
+    });
+    grid.appendChild(tr);
+  });
+
+  document.getElementById("prev").disabled = cases.length <= 1;
+  document.getElementById("next").disabled = cases.length <= 1;
+}
+
+document.getElementById("next").addEventListener("click", () => {
+  index = (index + 1) % cases.length;
+  showCase(index);
+});
+document.getElementById("prev").addEventListener("click", () => {
+  index = (index - 1 + cases.length) % cases.length;
+  showCase(index);
+});
+
+loadCases();
+</script>
+</body>
+</html>
