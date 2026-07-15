@@ -325,7 +325,7 @@ from collections import defaultdict
 
 from rose.common import actions, obstacles
 
-driver_name = "IENO Competition Driver"
+driver_name = "IENO Competition Driver_claude"
 
 GAME_DURATION_TURNS = 60
 TRACK_SCORE_WEIGHT = 1.0
@@ -339,7 +339,7 @@ OWN_LANE_CENTER_BONUS = 0.2
 # steps of invincibility. While shielded it stops dodging bad obstacles
 # (no jump/brake/avoidance steering) and just drives straight, still
 # picking up any penguin directly in front of it.
-PENGUINS_FOR_SHIELD = 5
+PENGUINS_FOR_SHIELD = 3
 SHIELD_DURATION = 5
 
 
