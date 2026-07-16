@@ -2,7 +2,7 @@
 Local browser viewer for driver edge cases.
 
 Run with `python viz_server.py` and open http://localhost:8090.
-Every case registered in cases/ (see cases/__init__.py) shows up here
+Every case registered in cases/ (see cases/tests_runner.py) shows up here
 automatically - adding a new cases/*.py file is enough, nothing else
 needs to change.
 """
@@ -14,6 +14,7 @@ import socketserver
 from pathlib import Path
 
 import cases
+from rose.common import obstacles
 
 STATIC_DIR = Path(__file__).parent / "viz_static"
 
@@ -22,14 +23,31 @@ def case_summary(index, case):
     return {"index": index, "name": case.name, "description": case.description}
 
 
+def trim_track(track, car):
+    """
+    Drop leading rows that carry no obstacle and aren't the car's own row,
+    so the viewer only shows the rows that matter for a given case instead
+    of the full padded track the driver actually runs against.
+    """
+    first_obstacle_row = next(
+        (i for i, row in enumerate(track) if any(cell != obstacles.NONE for cell in row)),
+        car["y"],
+    )
+    start = min(first_obstacle_row, car["y"])
+    if len(track) - start == 2 and start > 0:
+        start -= 1
+    return track[start:], {"x": car["x"], "y": car["y"] - start}
+
+
 def case_detail(index, case):
     actual, error = cases.run(case)
+    display_track, display_car = trim_track(case.track, case.car)
     return {
         "index": index,
         "name": case.name,
         "description": case.description,
-        "track": case.track,
-        "car": case.car,
+        "track": display_track,
+        "car": display_car,
         "expected": case.expected,
         "actual": actual,
         "error": error,
@@ -82,7 +100,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description="Serve the edge-case viewer.")
-    parser.add_argument("-p", "--port", type=int, default=8090)
+    parser.add_argument("-p", "--port", type=int, default=4398)
     args = parser.parse_args()
 
     with socketserver.TCPServer(("", args.port), Handler) as httpd:

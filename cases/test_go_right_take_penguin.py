@@ -1,6 +1,6 @@
 from rose.common import obstacles, actions
 import mydriver
-from . import register
+from tests_runner import register
 
 # mydriver.py's CompetitionPolicy expects a full-size track: HEIGHT=9 rows,
 # width a multiple of CELLS_PER_LANE=3,
@@ -22,7 +22,7 @@ register(
     name="penguins_flanking_wall_ahead",
     description=(
         "Car sits centered in the left lane (x=1). Penguins flank it one "
-        "row ahead in the left/right lanes; a wall sits two rows ahead in "
+        "row ahead in the left/right lanes: a wall sits two rows ahead in "
         "the left lane. Nothing blocks the car's own lane directly, so it "
         "should go straight."
     ),
