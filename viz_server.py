@@ -2,7 +2,7 @@
 Local browser viewer for driver edge cases.
 
 Run with `python viz_server.py` and open http://localhost:8090.
-Every case registered in cases/ (see cases/tests_runner.py) shows up here
+Every case registered in cases/ (see cases/__init__.py) shows up here
 automatically - adding a new cases/*.py file is enough, nothing else
 needs to change.
 """
@@ -100,7 +100,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description="Serve the edge-case viewer.")
-    parser.add_argument("-p", "--port", type=int, default=4398)
+    parser.add_argument("-p", "--port", type=int, default=4350)
     args = parser.parse_args()
 
     with socketserver.TCPServer(("", args.port), Handler) as httpd:

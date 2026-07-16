@@ -1,6 +1,6 @@
 from rose.common import obstacles, actions
 import mydriver
-from tests_runner import register
+from . import register
 
 # mydriver.py's CompetitionPolicy expects a full-size track: HEIGHT=9 rows,
 # width a multiple of CELLS_PER_LANE=3
